@@ -4,9 +4,14 @@ python compute_similar_products_cache.py --run=benchmark for benchmarking agains
 python compute_similar_products_cache.py --run=full saves cache of 128 similar products in similar_products_cache.npy
 
 This pipeline takes ~30 mins to run on Macbook. 
+Requirements : pip install torch==2.4.0 torchvision==0.19.0 numpy==1.26.4 faiss-cpu==1.7.4
+
+Output:
+1. similar_products_cache.pt : ~500KB/product -> 700MB / 1.5M product. 
 """
 
 import time
+import os
 import argparse
 import faiss
 import torch
@@ -53,6 +58,8 @@ if __name__ == __main__:
     args = parser.parse_args()
     assert args.run in ('benchmark', 'full'), "Please use --run=benchmark or --run=full."
     
+    start_time = time.perf_counter()
+    
     image_embeddings = torch.load('image_embeddings_normalized.pt')
     assert image_embeddings[0].norm() == 1.0, "Image embeddings aren't normalized."
     
@@ -61,3 +68,9 @@ if __name__ == __main__:
     
     similar_products_cache = torch.from_numpy(compute_similar_products_cache(index, image_embeddings))
     torch.save(similar_products_cache, 'similar_products_cache.pt')
+    
+    print("Done...")
+    print(f"The pipeline took {(time.perf_counter() - start_time) // 60} minutes.")
+    
+    print(f"Wrote the following files to disk:")
+    print(f"similar_products_cache.pt : {os.path.getsize('similar_products_cache.pt') / 1e9:.2f} GB")

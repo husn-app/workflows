@@ -9,8 +9,8 @@ and then encodes their embeddings.
 Requirements: pip install torch open_clip_torch
 
 Ouputs:
-1. image_embeddings_normalized.pt
-2. ordered_image_paths.json
+1. image_embeddings_normalized.pt : 3GB / 1.5 M products.
+2. ordered_image_paths.json : 131MB / 1.5 M products.
 """
 
 import torch
@@ -88,3 +88,7 @@ if __name__ == '__main__':
     
     print('Done...')
     print('The pipeline took ', (time.perf_counter() - start_time) // 60, ' minutes.')
+
+    print(f"Wrote the following files to disk:")
+    for file_name in ['ordered_image_paths.json', 'image_embeddings_normalized.pt']:
+        print(f"{filename} : {os.path.getsize(filename) / 1e9:.2f} GB")
