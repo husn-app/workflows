@@ -1,0 +1,9 @@
+images*
+.venv*
+*.DS_Store*
+image_embeddings_normalized.pt
+ordered_image_paths.json
+scripts/*
+scraped-myntra/*
+products_minimal.csv
+similar_products_cache_512.pt
