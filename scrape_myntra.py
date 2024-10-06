@@ -80,6 +80,7 @@ class MyntraScraper:
             json.dump(scraped_json, f)
             
     def scrape_page(self, page):
+        ## TODO : use consistent session?
         url = f'{self.scrape_url}?p={page}'
         return requests.get(f'{self.scrape_url}?p={page}', headers=self.headers)
         
@@ -94,27 +95,95 @@ class MyntraScraper:
             self.saveData(page, scraped_json)
             # print("Saved:    ", page)
             time.sleep(self.sleep_time)
-            
-class MyntraProcessor:            
-    def get_scraped_products(self):
-        SELECTED_PRODUCT_KEYS = ['landingPageUrl', 'productId', 'product', 'productName', 'rating', 'ratingCount',
-        'isFastFashion', 'brand', 'searchImage', 'sizes', 'gender', 'primaryColour', 'additionalInfo', 'category',
-        'price', 'articleType', 'subCategory', 'masterCategory']
 
-        all_products = []
-        for file in os.listdir('scraped'):
-            try:
-                data = json.loads(open(f'scraped/{file}').read())
-                products = data['searchData']['results']['products']
-                filtered_product = [{key: product[key] for key in SELECTED_PRODUCT_KEYS} for product in products]
-                all_products.extend(filtered_product)
-            except Exception as e:
-                print(f'Failed {file} : {e}')
-        return all_products
+"""
+TODO: Add myntra processing to main. 
+"""
+class MyntraProcessor:
+    def minimize_product(product):
+        return {
+            'original_website' : 'Myntra',
+            'product_url' : 'https://myntra.com/' + product['landingPageUrl'],
+            'product_id' : product['productId'],
+            'product_name' : product['productName'],
+            'rating' : product['rating'],
+            'rating_count' : product['ratingCount'],
+            'brand' : product['brand'],
+            'primary_image' : product['searchImage'],
+            'sizes' : product['sizes'],
+            'gender' : product['gender'],
+            'images' : [x['src'] for x in product['images'] if x['src']],
+            'price' : product['price']
+        }
+        
+    def get_all_products(self):
+        all_data = []        
+        for category in category_info.keys():
+            print('Category : ', category)
+            for file_ in tqdm(os.listdir(f'scraped-myntra/{category}')):
+                file_path = f'scraped-myntra/{category}/{file_}'
+                results = json.load(open(f'scraped-myntra/{category}/{file_}'))['searchData']['results']['products']
+                all_data.extend([x for x in results])
+        return all_data
+        
+    def deduplicate_products(self, all_data):
+        added_product_ids = set()
+        unique_data = []
+        for data in tqdm(all_data):
+            if data['productId'] in added_product_ids:
+                continue
+            added_product_ids.add(data['productId'])
+            unique_data.append(data)
+        return unique_data
+    
+    def processs(self):
+        print('Processing & deduplicating products...')
+        all_products = self.deduplicate_products(self.get_all_products())
+        
+        print('Writing full dump...')
+        json.dump(all_products, open('scraped-myntra/all_products_full_dump.json', 'w'))
+        
+        print('Writing minimized dump...')
+        minimized_products = [self.minimize_product(x) for x in all_products]
+        json.dump(minimized_products, open('scraped-myntra/all_products_minimized_dump.json', 'w'))
+        
+        print('Writing image urls...')
+        image_urls = [x['primary_image'] for x in minimized_products if x]
+        open('scraped-myntra/image-urls.txt', 'w').write('\n'.join(image_urls))
+        
+        print(f"Wrote the following files to disk:")
+        for filename in ['scraped-myntra/all_products_full_dump.json', 'scraped-myntra/all_products_minimized_dump.json', 'scraped-myntra/image-urls.txt']:
+            print(f"{filename} : {os.path.getsize(filename) / 1e9:.2f} GB")
 
-    def write_to_csv(self, filename):
-        scraped_products = get_scraped_products()
-        pd.DataFrame(scraped_products).to_csv(filename)
+"""
+TODO : Currently ordered_image_paths.json is written in encode_images.json. This is done post downloading the images,
+so all images that were not download are not in the list. 
+
+Create a binary to generate products df from json and order it and move the following function to that binary.
+"""
+def order_products_df():
+    # read products_df and image_paths order. 
+    products_df = pd.read_csv('myntra_scraped_data_20241005.csv')
+    image_paths = json.load(open('ordered_image_paths.json'))
+    image_paths_to_ix = {path : i for i, path in enumerate(image_paths)}
+
+    # 1. ignore nan rows 2. drop duplicates 3. remove images not in image_path
+    products_df = products_df[products_df['primary_image'].apply(lambda x: isinstance(x, str))]
+    products_df = products_df.drop_duplicates(subset='image_path', keep='first')
+    products_df = products_df[products_df['image_path'].isin(image_paths_to_ix)]
+    
+    ## Set ordered index. 
+    ordered_index = pd.Index([image_paths_to_ix[path] for path in products_df['image_path']])
+
+    products_df = products_df.set_index(ordered_index).sort_index()
+    products_df = products_df.reset_index(drop=True)
+
+    # delete image_path
+    del products_df['image_path']
+    if 'Unnamed: 0' in products_df.columns:
+        del products_df['Unnamed: 0']
+    products_df['index'] = products_df.index
+    return products_df
         
         
 if __name__ == '__main__':
@@ -133,4 +202,5 @@ if __name__ == '__main__':
     myntra_scraper = MyntraScraper(start_page=args.start_page, end_page=end_page, category=args.category, sleep_time=args.sleep_time)
     myntra_scraper.scrape_all()
 
+# open('image_urls.txt', 'w').write('\n'.join(list(image_urls)))
     
