@@ -7,6 +7,10 @@ and then encodes their embeddings.
 2. It ~2.5 hours for 1.5M images of size h x 224 (h as per 4/3 aspect ratio) on MPS
 
 Requirements: pip install torch open_clip_torch
+
+Ouputs:
+1. image_embeddings_normalized.pt
+2. ordered_image_paths.json
 """
 
 import torch
@@ -16,6 +20,8 @@ from PIL import Image
 import open_clip
 import time
 import argparse
+import json
+import torch.nn.functional as F
 
 
 torch.set_grad_enabled(False)
@@ -74,7 +80,11 @@ if __name__ == '__main__':
     
     print('Saving image_paths order, and image embeddings..')
     ## save embeddings and image_paths. 
-    ## save e
+    image_embeddings= F.normalize(image_embeddings, dim=-1)
+    torch.save(image_embeddings, 'image_embeddings_normalized.pt')
+    
+    ## save ordered image paths.
+    open('ordered_image_paths.json','w').write(json.dumps(image_paths))
     
     print('Done...')
     print('The pipeline took ', (time.perf_counter() - start_time) // 60, ' minutes.')
