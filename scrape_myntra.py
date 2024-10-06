@@ -148,7 +148,7 @@ class MyntraProcessor:
         json.dump(minimized_products, open('scraped-myntra/all_products_minimized_dump.json', 'w'))
         
         print('Writing image urls...')
-        image_urls = [x['primary_image'] for x in minimized_products if x]
+        image_urls = [x['primary_image'].replace('/assets/', '/w_240/f_webp/v1/assets/') for x in minimized_products if x['primary_image']]
         open('scraped-myntra/image-urls.txt', 'w').write('\n'.join(image_urls))
         
         print(f"Wrote the following files to disk:")
