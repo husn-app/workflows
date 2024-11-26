@@ -4,6 +4,7 @@ images*
 image_embeddings_normalized.pt
 ordered_image_paths.json
 scripts/*
-scraped-myntra/*
+scraped*/
 products_minimal.csv
 similar_products_cache_512.pt
+insta.ipynb
