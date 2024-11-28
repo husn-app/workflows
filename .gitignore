@@ -8,3 +8,6 @@ scraped*/
 products_minimal.csv
 similar_products_cache_512.pt
 insta.ipynb
+images/
+images2/
+insta_influencers_by_category_feedspot.json
