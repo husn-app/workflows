@@ -25,8 +25,7 @@ def reboot_wifi():
     time.sleep(10)
     
 ROOT_DIR = os.getcwd() + '/'
-SCRAPED_DIR  = ROOT_DIR + 'scraped/instagram'
-# SITE_URL = "https://www.instagram.com/"
+SCRAPED_DIR  = ROOT_DIR + 'scraped/freakinscreators'
 HEADERS = { 
     # this is internal ID of an instagram backend app. It doesn't change often.
     "x-ig-app-id": "936619743392459",
@@ -50,13 +49,13 @@ NO_OF_PROXIES_TRIED = 1
 
 class InstagramScraper:
     def setup_dirs(self):
-        if not os.path.exists(ROOT_DIR + 'scraped'):
-            os.mkdir(ROOT_DIR + 'scraped')
-        if not os.path.exists(SCRAPED_DIR):
+        # if not os.path.exists(ROOT_DIR + 'scraped'):
+        #     os.mkdir(ROOT_DIR + 'scraped')
+        if not os.path.exists(SCRAPED_DIR): # TODO mkdir_p
             os.mkdir(SCRAPED_DIR)
         
-        if not os.path.exists(SCRAPED_DIR + '/related_usernames'):
-            os.mkdir(SCRAPED_DIR + '/related_usernames')
+        # if not os.path.exists(SCRAPED_DIR + '/related_usernames'):
+        #     os.mkdir(SCRAPED_DIR + '/related_usernames')
         
     def __init__(self, usernames, proxy, max_usernames_to_scrape=50):
         self.setup_dirs()
@@ -123,7 +122,7 @@ class InstagramScraper:
                 # reboot_wifi()
                 return False
             
-            with open(ROOT_DIR + f'scraped/instagram/{username}.json', 'w') as f:
+            with open(SCRAPED_DIR + f'/{username}.json', 'w') as f:
                 json.dump(profile_data, f)
             return True
         except Exception as e:
@@ -132,7 +131,7 @@ class InstagramScraper:
     
     def scrape_profile_with_insta_api(self, username = ""):
         username = self.usernames[0]
-        file_path = ROOT_DIR + f'scraped/instagram/{username}.json'
+        file_path = SCRAPED_DIR + f'/{username}.json'
         user_exists = True
         try:
             resp = requests.get(
@@ -183,8 +182,6 @@ def main():
     
     already_scraped_users = [filename[:-5] for filename in os.listdir(SCRAPED_DIR) if filename.endswith('.json')]
     usernames = list(set(usernames) - set(non_existing_usernames) - set(already_scraped_users))
-    # usernames = [username for username in sorted(usernames) if f"{username}.json" not in os.listdir(SCRAPED_DIR)]
-    # usernames = usernames[-2000:]
 
     proxy_list, _ = get_spys_proxies()
     random.shuffle(proxy_list)
