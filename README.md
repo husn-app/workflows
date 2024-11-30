@@ -50,4 +50,7 @@ Official specs:
 
 ## Transferring data from localhost to Azure blob storage;
 1. brew install azcopy
-2. azcopy copy `DIR_NAME` "`<STORAGE_ACCOUNT_ACCESS_KEY>`" --recursive=true
+2. export AZCOPY_CONCURRENCY_VALUE=1000
+3. export AZCOPY_BUFFER_GB=8
+4. ulimit -n 65536
+5. azcopy copy `DIR_NAME` '`<STORAGE_ACCOUNT_ACCESS_KEY>`' --recursive=true --log-level=ERROR
